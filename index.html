@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Address Filter Tester</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 40px 20px;
+      background: #f4f6f8;
+      font-family: Arial, sans-serif;
+      color: #1f2937;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 850px;
+      margin: 0 auto;
+      background: white;
+      padding: 30px;
+      border-radius: 14px;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+    }
+
+    h1 {
+      margin-top: 0;
+    }
+
+    .description {
+      color: #4b5563;
+      line-height: 1.5;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: bold;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      font-size: 16px;
+    }
+
+    .options {
+      margin: 22px 0;
+      padding: 18px;
+      background: #f8fafc;
+      border-radius: 10px;
+    }
+
+    .option {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      margin: 12px 0;
+    }
+
+    .option label {
+      margin: 0;
+      font-weight: normal;
+    }
+
+    button {
+      padding: 12px 18px;
+      border: 0;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 15px;
+    }
+
+    .primary {
+      background: #2563eb;
+      color: white;
+    }
+
+    .secondary {
+      background: #e5e7eb;
+      color: #111827;
+      margin-left: 8px;
+    }
+
+    .status {
+      margin-top: 20px;
+      font-weight: bold;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 320px;
+      margin-top: 10px;
+      padding: 14px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      resize: vertical;
+      font-family: Consolas, monospace;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .warning {
+      margin-top: 25px;
+      padding: 14px;
+      background: #fff7ed;
+      border-left: 4px solid #f97316;
+      line-height: 1.4;
+    }
+  </style>
+</head>
+
+<body>
+  <main class="container">
+    <h1>Address Filter Tester</h1>
+
+    <p class="description">
+      Generate controlled address variations to test whether your address
+      normalization system recognizes equivalent formatting.
+    </p>
+
+    <label for="address">Test address</label>
+    <input
+      id="address"
+      type="text"
+      placeholder="Example: 123 Rue Street Apt 4"
+      autocomplete="off"
+    />
+
+    <section class="options">
+      <strong>Variations</strong>
+
+      <div class="option">
+        <input id="duplicateLast" type="checkbox" checked />
+        <label for="duplicateLast">
+          Duplicate the final letter of a word: Rue → Ruee
+        </label>
+      </div>
+
+      <div class="option">
+        <input id="duplicateFirst" type="checkbox" checked />
+        <label for="duplicateFirst">
+          Duplicate the first letter of a word: Rue → Rrue
+        </label>
+      </div>
+
+      <div class="option">
+        <input id="addPeriod" type="checkbox" checked />
+        <label for="addPeriod">
+          Add periods between address parts
+        </label>
+      </div>
+
+      <div class="option">
+        <input id="addHyphen" type="checkbox" checked />
+        <label for="addHyphen">
+          Add hyphens between address parts
+        </label>
+      </div>
+
+      <div class="option">
+        <input id="extraSpaces" type="checkbox" />
+        <label for="extraSpaces">
+          Add extra spaces
+        </label>
+      </div>
+
+      <div class="option">
+        <input id="changeCase" type="checkbox" />
+        <label for="changeCase">
+          Test uppercase and lowercase
+        </label>
+      </div>
+    </section>
+
+    <button class="primary" id="generateButton">
+      Generate test cases
+    </button>
+
+    <button class="secondary" id="copyButton">
+      Copy results
+    </button>
+
+    <div class="status" id="status"></div>
+
+    <textarea
+      id="results"
+      readonly
+      placeholder="Generated test cases will appear here."
+    ></textarea>
+
+    <div class="warning">
+      Use synthetic or authorized test data. A reliable filter should normalize
+      punctuation, spacing, capitalization, and common spelling variations
+      before comparing addresses.
+    </div>
+  </main>
+
+  <script>
+    const addressInput = document.getElementById("address");
+    const resultsOutput = document.getElementById("results");
+    const statusOutput = document.getElementById("status");
+
+    const duplicateLastCheckbox =
+      document.getElementById("duplicateLast");
+
+    const duplicateFirstCheckbox =
+      document.getElementById("duplicateFirst");
+
+    const addPeriodCheckbox =
+      document.getElementById("addPeriod");
+
+    const addHyphenCheckbox =
+      document.getElementById("addHyphen");
+
+    const extraSpacesCheckbox =
+      document.getElementById("extraSpaces");
+
+    const changeCaseCheckbox =
+      document.getElementById("changeCase");
+
+    function cleanAddress(address) {
+      return address.trim().replace(/\s+/g, " ");
+    }
+
+    function duplicateFirstLetter(word) {
+      if (!word || !/[a-zA-Z]/.test(word[0])) {
+        return word;
+      }
+
+      return word[0] + word;
+    }
+
+    function duplicateLastLetter(word) {
+      if (!word) {
+        return word;
+      }
+
+      const lastCharacter = word[word.length - 1];
+
+      if (!/[a-zA-Z]/.test(lastCharacter)) {
+        return word;
+      }
+
+      return word + lastCharacter;
+    }
+
+    function replaceOneWord(words, index, transformation) {
+      const updatedWords = [...words];
+      updatedWords[index] = transformation(updatedWords[index]);
+      return updatedWords.join(" ");
+    }
+
+    function generateAddressVariants(address) {
+      const normalizedAddress = cleanAddress(address);
+      const words = normalizedAddress.split(" ");
+      const variants = new Set();
+
+      variants.add(normalizedAddress);
+
+      if (duplicateFirstCheckbox.checked) {
+        words.forEach((word, index) => {
+          variants.add(
+            replaceOneWord(words, index, duplicateFirstLetter)
+          );
+        });
+      }
+
+      if (duplicateLastCheckbox.checked) {
+        words.forEach((word, index) => {
+          variants.add(
+            replaceOneWord(words, index, duplicateLastLetter)
+          );
+        });
+      }
+
+      if (addPeriodCheckbox.checked) {
+        variants.add(words.join("."));
+        variants.add(words.join(". "));
+      }
+
+      if (addHyphenCheckbox.checked) {
+        variants.add(words.join("-"));
+        variants.add(words.join(" - "));
+      }
+
+      if (extraSpacesCheckbox.checked) {
+        variants.add(words.join("  "));
+        variants.add(words.join("   "));
+      }
+
+      if (changeCaseCheckbox.checked) {
+        variants.add(normalizedAddress.toUpperCase());
+        variants.add(normalizedAddress.toLowerCase());
+      }
+
+      return Array.from(variants).slice(0, 100);
+    }
+
+    function generateResults() {
+      const address = addressInput.value;
+
+      if (!address.trim()) {
+        statusOutput.textContent = "Enter an address first.";
+        resultsOutput.value = "";
+        return;
+      }
+
+      const variants = generateAddressVariants(address);
+
+      resultsOutput.value = variants.join("\n");
+      statusOutput.textContent =
+        `${variants.length} test cases generated.`;
+    }
+
+    async function copyResults() {
+      const results = resultsOutput.value;
+
+      if (!results) {
+        statusOutput.textContent = "There are no results to copy.";
+        return;
+      }
+
+      try {
+        await navigator.clipboard.writeText(results);
+        statusOutput.textContent = "Results copied.";
+      } catch {
+        resultsOutput.select();
+        document.execCommand("copy");
+        statusOutput.textContent = "Results copied.";
+      }
+    }
+
+    document
+      .getElementById("generateButton")
+      .addEventListener("click", generateResults);
+
+    document
+      .getElementById("copyButton")
+      .addEventListener("click", copyResults);
+  </script>
+</body>
+</html>
